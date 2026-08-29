@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/widgets/app_nav_bar.dart';
-import '../../../../core/widgets/app_footer.dart';
-import '../widgets/hero_section.dart';
-import '../widgets/feature_cards_section.dart';
-import '../widgets/how_it_works_section.dart';
-import '../widgets/cta_banner_section.dart';
+import '../core/routes/app_routes.dart';
+import '../core/theme/app_colors.dart';
+import '../core/constants/app_constants.dart';
+import '../assets/widgets/common/app_nav_bar.dart';
+import '../assets/widgets/common/app_footer.dart';
+import '../assets/widgets/landing/hero_section.dart';
+import '../assets/widgets/landing/feature_cards_section.dart';
+import '../assets/widgets/landing/how_it_works_section.dart';
+import '../assets/widgets/landing/cta_banner_section.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -95,10 +96,7 @@ class _LandingPageState extends State<LandingPage> {
           AppNavBar(
             onNavItemTap: _handleNavTap,
             onLoginTap: () {
-              // Navigation to future Login screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Login screen planned for next phase!')),
-              );
+              Navigator.pushNamed(context, AppRoutes.login);
             },
           ),
 
@@ -109,7 +107,7 @@ class _LandingPageState extends State<LandingPage> {
               child: Column(
                 children: [
                   HeroSection(
-                    onGetStartedTap: () => _scrollToSection(_pricingKey),
+                    onGetStartedTap: () => Navigator.pushNamed(context, AppRoutes.registration),
                     onLearnMoreTap: () => _scrollToSection(_howItWorksKey),
                   ),
                   Container(
@@ -124,11 +122,7 @@ class _LandingPageState extends State<LandingPage> {
                     key: _pricingKey,
                     child: CtaBannerSection(
                       onCreateAccountTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Account Creation flow planned!'),
-                          ),
-                        );
+                        Navigator.pushNamed(context, AppRoutes.registration);
                       },
                     ),
                   ),

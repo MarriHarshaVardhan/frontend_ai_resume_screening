@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/constants/app_constants.dart';
+import '../core/constants/user_session.dart';
 import '../core/routes/app_routes.dart';
 import '../assets/widgets/common/custom_button.dart';
 import '../assets/widgets/common/custom_text_field.dart';
@@ -32,6 +33,12 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   void _handleRegister() {
     if (_formKey.currentState?.validate() ?? true) {
+      // Save registered user details to session
+      UserSession.login(
+        email: _emailController.text,
+        name: _nameController.text,
+      );
+
       showDialog(
         context: context,
         barrierDismissible: false,

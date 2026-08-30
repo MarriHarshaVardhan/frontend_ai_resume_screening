@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/constants/app_constants.dart';
+import '../core/constants/user_session.dart';
 import '../core/routes/app_routes.dart';
 import '../assets/widgets/common/custom_button.dart';
 import '../assets/widgets/common/custom_text_field.dart';
@@ -26,6 +27,9 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleLogin() {
     if (_formKey.currentState?.validate() ?? true) {
+      // Save logged-in user details to session
+      UserSession.login(email: _emailController.text);
+
       // Display Success Dialog with Green Tick Mark Icon
       showDialog(
         context: context,
@@ -82,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
           Navigator.of(context).pop(); // Close dialog
-          Navigator.pushReplacementNamed(context, AppRoutes.landing);
+          Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
         }
       });
     }

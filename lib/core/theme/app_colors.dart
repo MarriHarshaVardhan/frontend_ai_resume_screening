@@ -29,4 +29,15 @@ class AppColors {
   // Border & Divider
   static const Color border = Color(0xFFE2E8F0);
   static const Color cardBorder = Color(0xFFEFF2F7);
+
+  // Dashboard Sidebar Colors
+  static const Color sidebarBackground = Color(0xFF0F1322);
+  static const Color sidebarItemText = Color(0xFF8E9AA8);
+  static const Color sidebarItemHover = Color(0xFF1E2438);
+
+  // Status Badge Colors
+  static const Color statusCompletedBg = Color(0xFFD1FAE5);
+  static const Color statusCompletedText = Color(0xFF059669);
+  static const Color statusInProgressBg = Color(0xFFFEF3C7);
+  static const Color statusInProgressText = Color(0xFFD97706);
 }

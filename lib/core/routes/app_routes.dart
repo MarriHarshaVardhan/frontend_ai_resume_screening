@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../pages/landing_page.dart';
 import '../../pages/login_page.dart';
 import '../../pages/registration_page.dart';
+import '../../pages/dashboard_page.dart';
 
 class AppRoutes {
   static const String landing = '/';
@@ -9,6 +10,7 @@ class AppRoutes {
   static const String registration = '/registration';
   static const String pricing = '/pricing';
   static const String screening = '/screening';
+  static const String dashboard = '/dashboard';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -17,6 +19,7 @@ class AppRoutes {
       registration: (context) => const RegistrationPage(),
       pricing: (context) => const LandingPage(),
       screening: (context) => const LandingPage(),
+      dashboard: (context) => const DashboardPage(),
     };
   }
 }

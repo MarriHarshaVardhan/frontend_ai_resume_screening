@@ -10,4 +10,14 @@ class AppConstants {
     'Pricing',
     'Contact',
   ];
+
+  // Dashboard Navigation Items
+  static const List<String> dashboardNavItems = [
+    'Dashboard',
+    'New Screening',
+    'My Screenings',
+    'Jobs',
+    'Profile',
+    'Settings',
+  ];
 }

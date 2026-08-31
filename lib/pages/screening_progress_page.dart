@@ -68,10 +68,7 @@ class ScreeningProgressPage extends StatelessWidget {
                             ),
 
                             const SizedBox(height: 28),
-
-                            // ------------------------------------------------
                             // PROGRESS CARD
-                            // ------------------------------------------------
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.fromLTRB(

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../core/routes/app_routes.dart';
 import '../core/theme/app_colors.dart';
 import '../core/constants/user_session.dart';
+
 import '../assets/widgets/dashboard/dashboard_sidebar.dart';
 import '../assets/widgets/dashboard/dashboard_header.dart';
 import '../assets/widgets/dashboard/dashboard_stat_card.dart';
@@ -53,8 +55,13 @@ class _DashboardPageState extends State<DashboardPage> {
             ElevatedButton(
               onPressed: () {
                 UserSession.logout();
+
                 Navigator.pop(dialogContext);
-                Navigator.pushReplacementNamed(context, AppRoutes.login);
+
+                Navigator.pushReplacementNamed(
+                  context,
+                  AppRoutes.login,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -76,28 +83,54 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // Navigation Handler
   void _handleNavItemSelect(String item) {
     setState(() {
       _selectedRoute = item;
     });
 
-    if (item != 'Dashboard') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$item page coming soon!'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+    // Dashboard
+    if (item == 'Dashboard') {
+      return;
     }
+
+    // New Screening
+    if (item == 'New Screening') {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.newScreening,
+      );
+      return;
+    }
+
+    // My Screenings
+    if (item == 'My Screenings') {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.myScreenings,
+      );
+      return;
+    }
+
+    // Other Pages
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$item page coming soon!'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+
     final isDesktop = screenWidth > 900;
 
     return Scaffold(
       backgroundColor: AppColors.background,
+
+      // Mobile Drawer
       drawer: !isDesktop
           ? Drawer(
               child: DashboardSidebar(
@@ -113,9 +146,10 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             )
           : null,
+
       body: Row(
         children: [
-          // Left Persistent Sidebar for Desktop
+          // Desktop Sidebar
           if (isDesktop)
             DashboardSidebar(
               activeRoute: _selectedRoute,
@@ -123,24 +157,34 @@ class _DashboardPageState extends State<DashboardPage> {
               onLogoutTap: _handleLogout,
             ),
 
-          // Main Content Area
+          // Main Content
           Expanded(
             child: Column(
               children: [
-                // Mobile Top Bar when Sidebar is hidden
+                // Mobile Header
                 if (!isDesktop)
                   Container(
                     color: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
                         Builder(
                           builder: (btnContext) => IconButton(
-                            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-                            onPressed: () => Scaffold.of(btnContext).openDrawer(),
+                            icon: const Icon(
+                              Icons.menu,
+                              color: AppColors.textPrimary,
+                            ),
+                            onPressed: () {
+                              Scaffold.of(btnContext).openDrawer();
+                            },
                           ),
                         ),
+
                         const SizedBox(width: 8),
+
                         const Text(
                           'AI Resume Screener',
                           style: TextStyle(
@@ -153,7 +197,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
 
-                // Scrollable Dashboard Body
+                // Dashboard Body
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.symmetric(
@@ -162,40 +206,65 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     child: Center(
                       child: Container(
-                        constraints: const BoxConstraints(maxWidth: 1200),
+                        constraints: const BoxConstraints(
+                          maxWidth: 1200,
+                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.stretch,
                           children: [
-                            // Header Greeting & Notifications
+                            // Header
                             Builder(
                               builder: (context) {
-                                final args = ModalRoute.of(context)?.settings.arguments;
-                                String currentUserName = UserSession.userName;
-                                String currentUserInitials = UserSession.initials;
+                                final args = ModalRoute.of(context)
+                                    ?.settings
+                                    .arguments;
+
+                                String currentUserName =
+                                    UserSession.userName;
+
+                                String currentUserInitials =
+                                    UserSession.initials;
 
                                 if (args is Map<String, dynamic>) {
-                                  if (args['name'] != null && (args['name'] as String).trim().isNotEmpty) {
-                                    currentUserName = (args['name'] as String).trim();
+                                  if (args['name'] != null &&
+                                      (args['name'] as String)
+                                          .trim()
+                                          .isNotEmpty) {
+                                    currentUserName =
+                                        (args['name'] as String).trim();
                                   }
-                                  if (args['initials'] != null && (args['initials'] as String).trim().isNotEmpty) {
-                                    currentUserInitials = (args['initials'] as String).trim();
+
+                                  if (args['initials'] != null &&
+                                      (args['initials'] as String)
+                                          .trim()
+                                          .isNotEmpty) {
+                                    currentUserInitials =
+                                        (args['initials'] as String)
+                                            .trim();
                                   }
-                                } else if (args is String && args.trim().isNotEmpty) {
+                                } else if (args is String &&
+                                    args.trim().isNotEmpty) {
                                   currentUserName = args.trim();
                                 }
 
                                 return DashboardHeader(
                                   userName: currentUserName,
-                                  subtitle: "Here's what's happening with your screenings.",
+                                  subtitle:
+                                      "Here's what's happening with your screenings.",
                                   userInitials: currentUserInitials,
+
                                   onNotificationTap: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
                                       const SnackBar(
-                                        content: Text('No new notifications'),
+                                        content:
+                                            Text('No new notifications'),
                                         duration: Duration(seconds: 1),
                                       ),
                                     );
                                   },
+
                                   onProfileTap: () {
                                     _handleNavItemSelect('Profile');
                                   },
@@ -205,15 +274,17 @@ class _DashboardPageState extends State<DashboardPage> {
 
                             const SizedBox(height: 24),
 
-                            // Summary Metric Cards
+                            // Statistics Cards
                             _buildStatCards(screenWidth),
 
                             const SizedBox(height: 28),
 
-                            // Recent Screenings Section
+                            // Recent Screenings
                             RecentScreeningsTable(
                               onViewAllTap: () {
-                                _handleNavItemSelect('My Screenings');
+                                _handleNavItemSelect(
+                                  'My Screenings',
+                                );
                               },
                             ),
                           ],
@@ -250,20 +321,24 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     ];
 
+    // Desktop
     if (screenWidth > 1050) {
-      // 4 Columns in a single row
       return Row(
         children: statCards.map((card) {
           return Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6.0,
+              ),
               child: card,
             ),
           );
         }).toList(),
       );
-    } else if (screenWidth > 600) {
-      // 2x2 Grid for Tablets
+    }
+
+    // Tablet
+    else if (screenWidth > 600) {
       return Column(
         children: [
           Row(
@@ -273,7 +348,9 @@ class _DashboardPageState extends State<DashboardPage> {
               Expanded(child: statCards[1]),
             ],
           ),
+
           const SizedBox(height: 12),
+
           Row(
             children: [
               Expanded(child: statCards[2]),
@@ -283,12 +360,16 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ],
       );
-    } else {
-      // Stacked for Mobile
+    }
+
+    // Mobile
+    else {
       return Column(
         children: statCards.map((card) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
+            padding: const EdgeInsets.only(
+              bottom: 12.0,
+            ),
             child: card,
           );
         }).toList(),

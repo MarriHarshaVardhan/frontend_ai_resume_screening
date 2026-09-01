@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
+import '../core/routes/app_routes.dart';
 import '../assets/widgets/dashboard/dashboard_sidebar.dart';
 import '../assets/widgets/dashboard/dashboard_header.dart';
 import '../core/constants/user_session.dart';
@@ -15,6 +16,7 @@ class NewScreeningPage extends StatefulWidget {
 class _NewScreeningPageState extends State<NewScreeningPage> {
   final TextEditingController _jobTitleController = TextEditingController();
   final TextEditingController _skillsController = TextEditingController();
+
   String? _selectedFileName;
 
   @override
@@ -24,32 +26,98 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
     super.dispose();
   }
 
+  // Navigation
+  void _handleNavItemSelect(String item) {
+    // Current Page
+    if (item == 'New Screening') {
+      return;
+    }
+
+    // Dashboard
+    if (item == 'Dashboard') {
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.dashboard,
+      );
+      return;
+    }
+
+    // My Screenings
+    if (item == 'My Screenings') {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.myScreenings,
+      );
+      return;
+    }
+
+    // Other Pages
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$item page coming soon!'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _handleLogout() {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Confirm Logout',
-              style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-          content: const Text('Are you sure you want to logout of your account?',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Confirm Logout',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to logout of your account?',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel',
-                  style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
                 UserSession.logout();
+
                 Navigator.pop(dialogContext);
+
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.login,
+                  (route) => false,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text('Logout', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         );
@@ -58,42 +126,60 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
   }
 
   Future<void> _handleChooseFile() async {
-  final file = await FilePicker.pickFile(
-    type: FileType.custom,
-    allowedExtensions: ['pdf', 'doc', 'docx'],
-  );
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+      );
 
-  if (file != null) {
-    setState(() {
-      _selectedFileName = file.name;
-    });
+      if (file != null) {
+        setState(() {
+          _selectedFileName = file.name;
+        });
+      }
+    } catch (e) {
+      debugPrint('File picker error: $e');
+    }
   }
-}
 
   void _handleStartScreening() {
-    if (_selectedFileName == null || _jobTitleController.text.trim().isEmpty) {
+    if (_selectedFileName == null ||
+        _jobTitleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload a resume and enter a job title')),
+        const SnackBar(
+          content: Text(
+            'Please upload a resume and enter a job title',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Screening started! (mock - API not connected yet)')),
+
+    Navigator.pushNamed(
+      context,
+      AppRoutes.screeningProgress,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+
     final isDesktop = screenWidth > 900;
 
     return Scaffold(
       backgroundColor: AppColors.background,
+
+      // Mobile Drawer
       drawer: !isDesktop
           ? Drawer(
               child: DashboardSidebar(
                 activeRoute: 'New Screening',
-                onItemSelected: (item) => Navigator.pop(context),
+                onItemSelected: (item) {
+                  Navigator.pop(context);
+                  _handleNavItemSelect(item);
+                },
                 onLogoutTap: () {
                   Navigator.pop(context);
                   _handleLogout();
@@ -101,52 +187,93 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
               ),
             )
           : null,
+
       body: Row(
         children: [
+          // Desktop Sidebar
           if (isDesktop)
             DashboardSidebar(
               activeRoute: 'New Screening',
-              onItemSelected: (item) {},
+              onItemSelected: _handleNavItemSelect,
               onLogoutTap: _handleLogout,
             ),
+
+          // Main Content
           Expanded(
             child: Column(
               children: [
+                // Mobile Header
                 if (!isDesktop)
                   Container(
                     color: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
                         Builder(
                           builder: (btnContext) => IconButton(
-                            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-                            onPressed: () => Scaffold.of(btnContext).openDrawer(),
+                            icon: const Icon(
+                              Icons.menu,
+                              color: AppColors.textPrimary,
+                            ),
+                            onPressed: () {
+                              Scaffold.of(btnContext).openDrawer();
+                            },
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text('AI Resume Screener',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                        const Text(
+                          'AI Resume Screener',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
+
+                // Page Content
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(horizontal: isDesktop ? 36.0 : 16.0, vertical: 28.0),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isDesktop ? 36.0 : 16.0,
+                      vertical: 28.0,
+                    ),
                     child: Center(
                       child: Container(
-                        constraints: const BoxConstraints(maxWidth: 1200),
+                        constraints: const BoxConstraints(
+                          maxWidth: 1200,
+                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.stretch,
                           children: [
                             DashboardHeader(
                               userName: UserSession.userName,
-                              subtitle: 'Upload a resume and job details to start screening.',
+                              subtitle:
+                                  'Upload a resume and job details to start screening.',
                               userInitials: UserSession.initials,
-                              onNotificationTap: () {},
-                              onProfileTap: () {},
+                              onNotificationTap: () {
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('No new notifications'),
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                              },
+                              onProfileTap: () {
+                                _handleNavItemSelect('Profile');
+                              },
                             ),
+
                             const SizedBox(height: 24),
+
                             _buildFormCard(),
                           ],
                         ),
@@ -164,34 +291,79 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
 
   Widget _buildFormCard() {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 700),
+      constraints: const BoxConstraints(
+        maxWidth: 700,
+      ),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: AppColors.border,
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Upload Resume',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          const Text(
+            'Upload Resume',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+
           const SizedBox(height: 8),
+
           _buildUploadBox(),
+
           const SizedBox(height: 24),
-          const Text('Job Title',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+
+          const Text(
+            'Job Title',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+
           const SizedBox(height: 8),
-          _buildTextField(_jobTitleController, 'Enter job title'),
+
+          _buildTextField(
+            _jobTitleController,
+            'Enter job title',
+          ),
+
           const SizedBox(height: 24),
-          const Text('Required Skills (comma separated)',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+
+          const Text(
+            'Required Skills (comma separated)',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+
           const SizedBox(height: 8),
-          _buildTextField(_skillsController, 'e.g. Python, Machine Learning, SQL', maxLines: 3),
+
+          _buildTextField(
+            _skillsController,
+            'e.g. Python, Machine Learning, SQL',
+            maxLines: 3,
+          ),
+
           const SizedBox(height: 28),
+
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -199,10 +371,18 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
               onPressed: _handleStartScreening,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
               ),
-              child: const Text('Start Screening',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+              child: const Text(
+                'Start Screening',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
         ],
@@ -211,59 +391,124 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
   }
 
   Widget _buildUploadBox() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1.5),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.cloud_upload_outlined, color: AppColors.primary, size: 32),
-          const SizedBox(height: 12),
-          Text(
-            _selectedFileName ?? 'Drag & drop your file here',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+    return InkWell(
+      onTap: _handleChooseFile,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          vertical: 40,
+          horizontal: 16,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _selectedFileName != null
+                ? AppColors.primary
+                : AppColors.border,
+            width: 1.5,
           ),
-          const SizedBox(height: 4),
-          const Text('PDF, DOC, DOCX (max 10 MB)',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _handleChooseFile,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              _selectedFileName != null
+                  ? Icons.description_rounded
+                  : Icons.cloud_upload_outlined,
+              color: AppColors.primary,
+              size: 36,
             ),
-            child: const Text('Choose File', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-          ),
-        ],
+
+            const SizedBox(height: 12),
+
+            Text(
+              _selectedFileName ??
+                  'Drag & drop your file here',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: _selectedFileName != null
+                    ? AppColors.primary
+                    : AppColors.textPrimary,
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            const Text(
+              'PDF, DOC, DOCX (max 10 MB)',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textMuted,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            ElevatedButton(
+              onPressed: _handleChooseFile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+              ),
+              child: Text(
+                _selectedFileName != null
+                    ? 'Change File'
+                    : 'Choose File',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {int maxLines = 1}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint, {
+    int maxLines = 1,
+  }) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted),
+        hintStyle: const TextStyle(
+          color: AppColors.textMuted,
+        ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(
+            color: AppColors.border,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary),
+          borderSide: const BorderSide(
+            color: AppColors.primary,
+          ),
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }

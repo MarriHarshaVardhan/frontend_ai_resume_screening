@@ -1,11 +1,69 @@
 import 'package:flutter/material.dart';
-
+import '../core/routes/app_routes.dart';
+import '../core/theme/app_colors.dart';
+import '../core/constants/user_session.dart';
 import '../assets/widgets/dashboard/dashboard_sidebar.dart';
-
-
 
 class ScreeningProgressPage extends StatelessWidget {
   const ScreeningProgressPage({super.key});
+
+  void _handleLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Confirm Logout',
+            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+          ),
+          content: const Text(
+            'Are you sure you want to logout of your account?',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                UserSession.logout();
+                Navigator.pop(dialogContext);
+                Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text(
+                'Logout',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _handleNavItemSelect(BuildContext context, String item) {
+    if (item == 'Dashboard') {
+      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+    } else if (item == 'New Screening') {
+      Navigator.pushReplacementNamed(context, AppRoutes.newScreening);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$item page coming soon!'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,12 +72,32 @@ class ScreeningProgressPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFBFC),
+      drawer: !isDesktop
+          ? Drawer(
+              child: DashboardSidebar(
+                activeRoute: 'New Screening',
+                onItemSelected: (item) {
+                  Navigator.pop(context);
+                  _handleNavItemSelect(context, item);
+                },
+                onLogoutTap: () {
+                  Navigator.pop(context);
+                  _handleLogout(context);
+                },
+              ),
+            )
+          : null,
       body: Row(
         children: [
           // ----------------------------------------------------------
           // SIDEBAR
           // ----------------------------------------------------------
-          if (isDesktop) const DashboardSidebar(),
+          if (isDesktop)
+            DashboardSidebar(
+              activeRoute: 'New Screening',
+              onItemSelected: (item) => _handleNavItemSelect(context, item),
+              onLogoutTap: () => _handleLogout(context),
+            ),
 
           // ----------------------------------------------------------
           // MAIN CONTENT
@@ -27,7 +105,30 @@ class ScreeningProgressPage extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                
+                if (!isDesktop)
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Builder(
+                          builder: (btnContext) => IconButton(
+                            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
+                            onPressed: () => Scaffold.of(btnContext).openDrawer(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'AI Resume Screener',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                 Expanded(
                   child: SingleChildScrollView(
@@ -189,9 +290,10 @@ class ScreeningProgressPage extends StatelessWidget {
                                     alignment: Alignment.centerLeft,
                                     child: OutlinedButton(
                                       onPressed: () {
-                                        // TODO:
-                                        // Navigate to screening result page
-                                        // when backend/result page is ready.
+                                        Navigator.pushNamed(
+                                          context,
+                                          AppRoutes.screeningResult,
+                                        );
                                       },
                                       style: OutlinedButton.styleFrom(
                                         backgroundColor: Colors.white,

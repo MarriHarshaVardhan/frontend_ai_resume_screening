@@ -7,11 +7,15 @@ class CandidateResultHeader extends StatelessWidget {
   final String jobRole;
   final double matchScore;
 
+  // Download function
+  final VoidCallback? onDownload;
+
   const CandidateResultHeader({
     super.key,
     required this.candidateName,
     required this.jobRole,
     required this.matchScore,
+    this.onDownload,
   });
 
   @override
@@ -27,7 +31,9 @@ class CandidateResultHeader extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(
+              alpha: 0.05,
+            ),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -35,17 +41,16 @@ class CandidateResultHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Match Score Circle
           MatchScoreCircle(
             score: matchScore,
           ),
 
           const SizedBox(width: 24),
 
-          // Candidate Details
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   candidateName,
@@ -75,7 +80,8 @@ class CandidateResultHeader extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE2F4E8),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius:
+                        BorderRadius.circular(20),
                   ),
                   child: const Text(
                     'Good Match',
@@ -102,22 +108,23 @@ class CandidateResultHeader extends StatelessWidget {
 
           const SizedBox(width: 20),
 
-          // Download Report Button
+          // ONLY GREEN DOWNLOAD BUTTON
           ElevatedButton.icon(
-            onPressed: () {
-              // Download report functionality later
-            },
+            onPressed: onDownload,
             icon: const Icon(Icons.download),
             label: const Text('Download Report'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF16804B),
+              backgroundColor:
+                  const Color(0xFF16804B),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
+              padding:
+                  const EdgeInsets.symmetric(
                 horizontal: 18,
                 vertical: 16,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius:
+                    BorderRadius.circular(10),
               ),
             ),
           ),

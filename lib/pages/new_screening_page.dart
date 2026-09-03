@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+
 import '../core/theme/app_colors.dart';
 import '../core/routes/app_routes.dart';
 import '../assets/widgets/dashboard/dashboard_sidebar.dart';
 import '../assets/widgets/dashboard/dashboard_header.dart';
 import '../core/constants/user_session.dart';
-import 'package:file_picker/file_picker.dart';
+import '../services/resume_service.dart';
 
 class NewScreeningPage extends StatefulWidget {
   const NewScreeningPage({super.key});
@@ -14,10 +16,15 @@ class NewScreeningPage extends StatefulWidget {
 }
 
 class _NewScreeningPageState extends State<NewScreeningPage> {
-  final TextEditingController _jobTitleController = TextEditingController();
-  final TextEditingController _skillsController = TextEditingController();
+  final TextEditingController _jobTitleController =
+      TextEditingController();
 
-  String? _selectedFileName;
+  final TextEditingController _skillsController =
+      TextEditingController();
+
+  PlatformFile? _selectedFile;
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,14 +33,11 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
     super.dispose();
   }
 
-  // Navigation
   void _handleNavItemSelect(String item) {
-    // Current Page
     if (item == 'New Screening') {
       return;
     }
 
-    // Dashboard
     if (item == 'Dashboard') {
       Navigator.pushReplacementNamed(
         context,
@@ -42,7 +46,6 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
       return;
     }
 
-    // My Screenings
     if (item == 'My Screenings') {
       Navigator.pushNamed(
         context,
@@ -51,7 +54,6 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
       return;
     }
 
-    // Other Pages
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$item page coming soon!'),
@@ -84,7 +86,9 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
               child: const Text(
                 'Cancel',
                 style: TextStyle(
@@ -125,30 +129,45 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
     );
   }
 
+  // ================= CHOOSE RESUME FILE =================
+
   Future<void> _handleChooseFile() async {
     try {
-      final file = await FilePicker.pickFile(
+      final FilePickerResult? result =
+          await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'doc', 'docx'],
       );
 
-      if (file != null) {
+      if (result != null && result.files.isNotEmpty) {
         setState(() {
-          _selectedFileName = file.name;
+          _selectedFile = result.files.single;
         });
       }
     } catch (e) {
       debugPrint('File picker error: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to select file: $e',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
-  void _handleStartScreening() {
-    if (_selectedFileName == null ||
-        _jobTitleController.text.trim().isEmpty) {
+  // ================= START SCREENING =================
+
+  Future<void> _handleStartScreening() async {
+    if (_selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Please upload a resume and enter a job title',
+            'Please upload a resume',
           ),
           backgroundColor: Colors.redAccent,
         ),
@@ -156,22 +175,104 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
       return;
     }
 
-    Navigator.pushNamed(
-      context,
-      AppRoutes.screeningProgress,
-    );
+    final jobTitle =
+        _jobTitleController.text.trim();
+
+    if (jobTitle.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter a job title',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final requiredSkills =
+        _skillsController.text
+            .split(',')
+            .map((skill) => skill.trim())
+            .where((skill) => skill.isNotEmpty)
+            .toList();
+
+    if (requiredSkills.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter at least one required skill',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final screeningId =
+          await ResumeService.startScreening(
+        _selectedFile!,
+        jobTitle,
+        requiredSkills,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      Navigator.pushNamed(
+        context,
+        AppRoutes.screeningProgress,
+        arguments: {
+          'screening_id': screeningId,
+          'job_title': jobTitle,
+          'required_skills': requiredSkills,
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      String errorMessage = e.toString();
+
+      errorMessage = errorMessage.replaceFirst(
+        'Exception: ',
+        '',
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.redAccent,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+  Widget build(
+    BuildContext context,
+  ) {
+    final screenWidth =
+        MediaQuery.of(context).size.width;
 
-    final isDesktop = screenWidth > 900;
+    final isDesktop =
+        screenWidth > 900;
 
     return Scaffold(
       backgroundColor: AppColors.background,
 
-      // Mobile Drawer
       drawer: !isDesktop
           ? Drawer(
               child: DashboardSidebar(
@@ -190,89 +291,117 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
 
       body: Row(
         children: [
-          // Desktop Sidebar
           if (isDesktop)
             DashboardSidebar(
               activeRoute: 'New Screening',
-              onItemSelected: _handleNavItemSelect,
-              onLogoutTap: _handleLogout,
+              onItemSelected:
+                  _handleNavItemSelect,
+              onLogoutTap:
+                  _handleLogout,
             ),
 
-          // Main Content
           Expanded(
             child: Column(
               children: [
-                // Mobile Header
                 if (!isDesktop)
                   Container(
                     color: Colors.white,
-                    padding: const EdgeInsets.symmetric(
+                    padding:
+                        const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
                     child: Row(
                       children: [
                         Builder(
-                          builder: (btnContext) => IconButton(
-                            icon: const Icon(
+                          builder:
+                              (btnContext) =>
+                                  IconButton(
+                            icon:
+                                const Icon(
                               Icons.menu,
-                              color: AppColors.textPrimary,
+                              color: AppColors
+                                  .textPrimary,
                             ),
                             onPressed: () {
-                              Scaffold.of(btnContext).openDrawer();
+                              Scaffold.of(
+                                btnContext,
+                              ).openDrawer();
                             },
                           ),
                         ),
+
                         const SizedBox(width: 8),
+
                         const Text(
                           'AI Resume Screener',
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            fontWeight:
+                                FontWeight.w700,
+                            color: AppColors
+                                .textPrimary,
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                // Page Content
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 36.0 : 16.0,
+                  child:
+                      SingleChildScrollView(
+                    padding:
+                        EdgeInsets.symmetric(
+                      horizontal:
+                          isDesktop
+                              ? 36.0
+                              : 16.0,
                       vertical: 28.0,
                     ),
                     child: Center(
                       child: Container(
-                        constraints: const BoxConstraints(
+                        constraints:
+                            const BoxConstraints(
                           maxWidth: 1200,
                         ),
                         child: Column(
                           crossAxisAlignment:
-                              CrossAxisAlignment.stretch,
+                              CrossAxisAlignment
+                                  .stretch,
                           children: [
                             DashboardHeader(
-                              userName: UserSession.userName,
+                              userName:
+                                  UserSession.userName,
                               subtitle:
                                   'Upload a resume and job details to start screening.',
-                              userInitials: UserSession.initials,
-                              onNotificationTap: () {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(
+                              userInitials:
+                                  UserSession.initials,
+                              onNotificationTap:
+                                  () {
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(
                                   const SnackBar(
-                                    content:
-                                        Text('No new notifications'),
-                                    duration: Duration(seconds: 1),
+                                    content: Text(
+                                      'No new notifications',
+                                    ),
+                                    duration:
+                                        Duration(
+                                      seconds: 1,
+                                    ),
                                   ),
                                 );
                               },
                               onProfileTap: () {
-                                _handleNavItemSelect('Profile');
+                                _handleNavItemSelect(
+                                  'Profile',
+                                );
                               },
                             ),
 
-                            const SizedBox(height: 24),
+                            const SizedBox(
+                              height: 24,
+                            ),
 
                             _buildFormCard(),
                           ],
@@ -289,35 +418,45 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
     );
   }
 
+  // ================= SCREENING FORM =================
+
   Widget _buildFormCard() {
     return Container(
-      constraints: const BoxConstraints(
+      constraints:
+          const BoxConstraints(
         maxWidth: 700,
       ),
-      padding: const EdgeInsets.all(24),
+      padding:
+          const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+            BorderRadius.circular(20),
         border: Border.all(
           color: AppColors.border,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black
+                .withValues(alpha: 0.03),
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset:
+                const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           const Text(
             'Upload Resume',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              fontWeight:
+                  FontWeight.w600,
+              color:
+                  AppColors.textPrimary,
             ),
           ),
 
@@ -331,8 +470,10 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
             'Job Title',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              fontWeight:
+                  FontWeight.w600,
+              color:
+                  AppColors.textPrimary,
             ),
           ),
 
@@ -349,8 +490,10 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
             'Required Skills (comma separated)',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              fontWeight:
+                  FontWeight.w600,
+              color:
+                  AppColors.textPrimary,
             ),
           ),
 
@@ -368,21 +511,45 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: _handleStartScreening,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+              onPressed: _isLoading
+                  ? null
+                  : _handleStartScreening,
+              style:
+                  ElevatedButton.styleFrom(
+                backgroundColor:
+                    AppColors.primary,
+                disabledBackgroundColor:
+                    AppColors.primary
+                        .withValues(
+                  alpha: 0.6,
+                ),
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(
+                    24,
+                  ),
                 ),
               ),
-              child: const Text(
-                'Start Screening',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child:
+                          CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Start Screening',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight:
+                            FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -390,21 +557,28 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
     );
   }
 
+  // ================= FILE UPLOAD BOX =================
+
   Widget _buildUploadBox() {
     return InkWell(
-      onTap: _handleChooseFile,
-      borderRadius: BorderRadius.circular(16),
+      onTap: _isLoading
+          ? null
+          : _handleChooseFile,
+      borderRadius:
+          BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(
+        padding:
+            const EdgeInsets.symmetric(
           vertical: 40,
           horizontal: 16,
         ),
         decoration: BoxDecoration(
           color: AppColors.background,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius:
+              BorderRadius.circular(16),
           border: Border.all(
-            color: _selectedFileName != null
+            color: _selectedFile != null
                 ? AppColors.primary
                 : AppColors.border,
             width: 1.5,
@@ -413,7 +587,7 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
         child: Column(
           children: [
             Icon(
-              _selectedFileName != null
+              _selectedFile != null
                   ? Icons.description_rounded
                   : Icons.cloud_upload_outlined,
               color: AppColors.primary,
@@ -423,15 +597,19 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
             const SizedBox(height: 12),
 
             Text(
-              _selectedFileName ??
+              _selectedFile?.name ??
                   'Drag & drop your file here',
-              textAlign: TextAlign.center,
+              textAlign:
+                  TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: _selectedFileName != null
-                    ? AppColors.primary
-                    : AppColors.textPrimary,
+                fontWeight:
+                    FontWeight.w600,
+                color:
+                    _selectedFile != null
+                        ? AppColors.primary
+                        : AppColors
+                            .textPrimary,
               ),
             ),
 
@@ -441,31 +619,42 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
               'PDF, DOC, DOCX (max 10 MB)',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textMuted,
+                color:
+                    AppColors.textMuted,
               ),
             ),
 
             const SizedBox(height: 16),
 
             ElevatedButton(
-              onPressed: _handleChooseFile,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+              onPressed: _isLoading
+                  ? null
+                  : _handleChooseFile,
+              style:
+                  ElevatedButton.styleFrom(
+                backgroundColor:
+                    AppColors.primary,
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(
+                    24,
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(
+                padding:
+                    const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 10,
                 ),
               ),
               child: Text(
-                _selectedFileName != null
+                _selectedFile != null
                     ? 'Change File'
                     : 'Choose File',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                  fontWeight:
+                      FontWeight.w600,
                 ),
               ),
             ),
@@ -474,6 +663,8 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
       ),
     );
   }
+
+  // ================= TEXT FIELD =================
 
   Widget _buildTextField(
     TextEditingController controller,
@@ -490,24 +681,32 @@ class _NewScreeningPageState extends State<NewScreeningPage> {
         ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
+        contentPadding:
+            const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
+        enabledBorder:
+            OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(8),
+          borderSide:
+              const BorderSide(
             color: AppColors.border,
           ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
+        focusedBorder:
+            OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(8),
+          borderSide:
+              const BorderSide(
             color: AppColors.primary,
           ),
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius:
+              BorderRadius.circular(8),
         ),
       ),
     );

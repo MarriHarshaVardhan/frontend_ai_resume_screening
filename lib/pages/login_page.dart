@@ -261,7 +261,7 @@ class _LoginPageState extends State<LoginPage> {
                       // Email / Mobile
                       CustomTextField(
                         label: 'Email or Mobile',
-                        hintText: 'you@company.com',
+                        hintText: 'Enter your email or mobile number',
                         prefixIcon: Icons.mail_outline,
                         keyboardType:
                             TextInputType.emailAddress,

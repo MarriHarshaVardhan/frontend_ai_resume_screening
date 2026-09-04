@@ -275,7 +275,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       // Full Name
                       CustomTextField(
                         label: 'Full Name',
-                        hintText: 'Firoz Syed',
+                        hintText: 'Enter your full name',
                         prefixIcon: Icons.person_outline,
                         controller: _nameController,
                         validator: (value) {
@@ -293,7 +293,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       // Email
                       CustomTextField(
                         label: 'Email Address',
-                        hintText: 'you@company.com',
+                        hintText: 'Enter your email address',
                         prefixIcon: Icons.mail_outline,
                         keyboardType:
                             TextInputType.emailAddress,
@@ -317,7 +317,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       // Contact
                       CustomTextField(
                         label: 'Contact Number',
-                        hintText: '+91 98765 43210',
+                        hintText: 'Enter your contact number',
                         prefixIcon: Icons.phone_outlined,
                         keyboardType:
                             TextInputType.phone,

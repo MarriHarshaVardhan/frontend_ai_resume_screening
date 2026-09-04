@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../assets/widgets/my_screenings/screening_search_bar.dart';
 import '../assets/widgets/my_screenings/screenings_table.dart';
 import '../assets/widgets/my_screenings/screenings_pagination.dart';
+import '../services/screening_service.dart';
 
 class MyScreeningsPage extends StatefulWidget {
   const MyScreeningsPage({super.key});
@@ -12,62 +13,101 @@ class MyScreeningsPage extends StatefulWidget {
 }
 
 class _MyScreeningsPageState extends State<MyScreeningsPage> {
-  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController =
+      TextEditingController();
 
   int _currentPage = 1;
 
-  final List<Map<String, dynamic>> _screenings = [
-    {
-      'jobTitle': 'AI Engineer',
-      'candidate': 'Ravi Kumar',
-      'matchScore': '85%',
-      'status': 'Completed',
-      'date': '01 Sep 2026',
-    },
-    {
-      'jobTitle': 'Data Analyst',
-      'candidate': 'Priya Sharma',
-      'matchScore': '78%',
-      'status': 'Completed',
-      'date': '31 Aug 2026',
-    },
-    {
-      'jobTitle': 'Python Developer',
-      'candidate': 'Arjun Reddy',
-      'matchScore': 'Pending',
-      'status': 'In Progress',
-      'date': '31 Aug 2026',
-    },
-    {
-      'jobTitle': 'Machine Learning Engineer',
-      'candidate': 'Sneha Patel',
-      'matchScore': '92%',
-      'status': 'Completed',
-      'date': '30 Aug 2026',
-    },
-    {
-      'jobTitle': 'Backend Developer',
-      'candidate': 'Rahul Verma',
-      'matchScore': '81%',
-      'status': 'Completed',
-      'date': '29 Aug 2026',
-    },
-  ];
+  final List<Map<String, dynamic>> _screenings = [];
 
   List<Map<String, dynamic>> _filteredScreenings = [];
+
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  static const int _itemsPerPage = 5;
+
+  int get _totalPages =>
+      (_filteredScreenings.length / _itemsPerPage).ceil();
+
+  List<Map<String, dynamic>> get _paginatedScreenings {
+    if (_filteredScreenings.isEmpty) {
+      return [];
+    }
+
+    final startIndex = (_currentPage - 1) * _itemsPerPage;
+
+    if (startIndex >= _filteredScreenings.length) {
+      return [];
+    }
+
+    final endIndex = (startIndex + _itemsPerPage)
+        .clamp(0, _filteredScreenings.length);
+
+    return _filteredScreenings.sublist(
+      startIndex,
+      endIndex,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
-    _filteredScreenings = List.from(_screenings);
+    _loadScreenings();
+  }
+
+  Future<void> _loadScreenings() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await ScreeningService.getScreenings();
+
+      final screenings = response.map((screening) {
+        return {
+          'screeningId': screening['screening_id'],
+          'jobTitle': screening['job_title'] ?? '',
+          'candidate': screening['candidate'] ?? '',
+          'matchScore': screening['match_score'] != null
+              ? '${screening['match_score']}%'
+              : 'Pending',
+          'status': screening['status'] ?? 'Pending',
+          'date': screening['date'] ?? '',
+        };
+      }).toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        _screenings
+          ..clear()
+          ..addAll(screenings);
+
+        _filteredScreenings = List.from(_screenings);
+
+        _currentPage = 1;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = error.toString();
+      });
+    }
   }
 
   void _searchScreenings(String value) {
     setState(() {
-      if (value.isEmpty) {
+      _currentPage = 1;
+
+      if (value.trim().isEmpty) {
         _filteredScreenings = List.from(_screenings);
       } else {
-        final query = value.toLowerCase();
+        final query = value.toLowerCase().trim();
 
         _filteredScreenings = _screenings.where((screening) {
           return screening['jobTitle']
@@ -143,21 +183,45 @@ class _MyScreeningsPageState extends State<MyScreeningsPage> {
 
             const SizedBox(height: 24),
 
-            ScreeningsTable(
-              screenings: _filteredScreenings,
-              onView: _viewScreening,
-            ),
+            // Loading / Error / Data
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_errorMessage != null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: Text(
+                    _errorMessage!,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              )
+            else
+              ScreeningsTable(
+                screenings: _paginatedScreenings,
+                onView: _viewScreening,
+              ),
 
             const SizedBox(height: 24),
 
-            ScreeningsPagination(
-              currentPage: _currentPage,
-              onPageChanged: (page) {
-                setState(() {
-                  _currentPage = page;
-                });
-              },
-            ),
+            // Dynamic Pagination
+            if (!_isLoading &&
+                _errorMessage == null &&
+                _totalPages > 1)
+              ScreeningsPagination(
+                currentPage: _currentPage,
+                totalPages: _totalPages,
+                onPageChanged: (page) {
+                  setState(() {
+                    _currentPage = page;
+                  });
+                },
+              ),
 
             const SizedBox(height: 30),
           ],

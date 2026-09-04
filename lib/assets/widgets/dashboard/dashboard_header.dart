@@ -29,7 +29,7 @@ class DashboardHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Welcome back, $userName',
+                'Welcome, $userName',
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,

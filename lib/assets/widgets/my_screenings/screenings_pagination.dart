@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 
 class ScreeningsPagination extends StatelessWidget {
   final int currentPage;
+  final int totalPages;
   final ValueChanged<int>? onPageChanged;
 
   const ScreeningsPagination({
     super.key,
-    this.currentPage = 1,
+    required this.currentPage,
+    required this.totalPages,
     this.onPageChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (totalPages <= 1) {
+      return const SizedBox.shrink();
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -25,26 +31,36 @@ class ScreeningsPagination extends StatelessWidget {
 
         const SizedBox(width: 8),
 
-        _buildPageButton(context, 1),
-        const SizedBox(width: 8),
+        ...List.generate(
+          totalPages,
+          (index) {
+            final page = index + 1;
 
-        _buildPageButton(context, 2),
-        const SizedBox(width: 8),
-
-        _buildPageButton(context, 3),
-
-        const SizedBox(width: 8),
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildPageButton(
+                context,
+                page,
+              ),
+            );
+          },
+        ),
 
         _buildButton(
           context,
           icon: Icons.chevron_right,
-          onTap: () => onPageChanged?.call(currentPage + 1),
+          onTap: currentPage < totalPages
+              ? () => onPageChanged?.call(currentPage + 1)
+              : null,
         ),
       ],
     );
   }
 
-  Widget _buildPageButton(BuildContext context, int page) {
+  Widget _buildPageButton(
+    BuildContext context,
+    int page,
+  ) {
     final bool isActive = page == currentPage;
 
     return InkWell(

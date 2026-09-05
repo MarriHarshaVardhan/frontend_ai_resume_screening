@@ -18,43 +18,15 @@ class ScreeningItem {
 }
 
 class RecentScreeningsTable extends StatelessWidget {
+  final List<ScreeningItem> screenings;
   final VoidCallback? onViewAllTap;
 
   const RecentScreeningsTable({
     super.key,
+    required this.screenings,
     this.onViewAllTap,
   });
 
-  static const List<ScreeningItem> _defaultScreenings = [
-    ScreeningItem(
-      candidateName: 'Ravi Kumar',
-      jobTitle: 'AI Engineer',
-      matchScore: '85%',
-      status: 'Completed',
-      date: '26 May 2024',
-    ),
-    ScreeningItem(
-      candidateName: 'Sneha Reddy',
-      jobTitle: 'Data Analyst',
-      matchScore: '72%',
-      status: 'Completed',
-      date: '25 May 2024',
-    ),
-    ScreeningItem(
-      candidateName: 'Arjun Singh',
-      jobTitle: 'ML Engineer',
-      matchScore: '90%',
-      status: 'Completed',
-      date: '24 May 2024',
-    ),
-    ScreeningItem(
-      candidateName: 'Priya Sharma',
-      jobTitle: 'Python Developer',
-      matchScore: '65%',
-      status: 'In Progress',
-      date: '24 May 2024',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +153,7 @@ class RecentScreeningsTable extends StatelessWidget {
                         ),
                       ),
                     ],
-                    rows: _defaultScreenings.map((item) {
+                    rows: screenings.map((item) {
                       final isCompleted = item.status.toLowerCase() == 'completed';
 
                       return DataRow(

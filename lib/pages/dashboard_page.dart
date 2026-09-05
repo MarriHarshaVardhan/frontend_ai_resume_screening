@@ -8,6 +8,8 @@ import '../assets/widgets/dashboard/dashboard_sidebar.dart';
 import '../assets/widgets/dashboard/dashboard_header.dart';
 import '../assets/widgets/dashboard/dashboard_stat_card.dart';
 import '../assets/widgets/dashboard/recent_screenings_table.dart';
+import '../services/screening_service.dart';
+import '../services/dashboard_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -18,6 +20,81 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   String _selectedRoute = 'Dashboard';
+
+  int _totalScreenings = 0;
+  int _completedScreenings = 0;
+  int _inProgressScreenings = 0;
+  double _averageMatchScore = 0;
+
+  List<ScreeningItem> _recentScreenings = [];
+
+  // Load recent screenings from backend
+  Future<void> _loadRecentScreenings() async {
+    try {
+      final screenings =
+          await ScreeningService.getRecentScreenings();
+
+      if (!mounted) return;
+
+      setState(() {
+        _recentScreenings = screenings.map((item) {
+          return ScreeningItem(
+            candidateName:
+                item['candidate']?.toString() ?? 'Unknown',
+            jobTitle:
+                item['job_title']?.toString() ?? 'N/A',
+            matchScore: item['match_score'] != null
+                ? '${item['match_score']}%'
+                : 'Pending',
+            status:
+                item['status']?.toString() ?? 'Pending',
+            date:
+                item['date']?.toString() ?? '',
+          );
+        }).toList();
+      });
+    } catch (e) {
+      debugPrint(
+        'Failed to load recent screenings: $e',
+      );
+    }
+  }
+
+  // Load dashboard statistics from backend
+  Future<void> _loadDashboardStats() async {
+    try {
+      final stats = await DashboardService.getStats();
+
+      if (!mounted) return;
+
+      setState(() {
+        _totalScreenings =
+            (stats['total_screenings'] as num?)?.toInt() ?? 0;
+
+        _completedScreenings =
+            (stats['completed'] as num?)?.toInt() ?? 0;
+
+        _inProgressScreenings =
+            (stats['in_progress'] as num?)?.toInt() ?? 0;
+
+        _averageMatchScore =
+            (stats['average_match_score'] as num?)?.toDouble() ?? 0;
+      });
+    } catch (e) {
+      debugPrint(
+        'Failed to load dashboard stats: $e',
+      );
+    }
+  }
+
+  // Load dashboard data when page opens
+  @override
+  void initState() {
+    super.initState();
+
+    _loadDashboardStats();
+    _loadRecentScreenings();
+  }
 
   void _handleLogout() {
     showDialog(
@@ -281,6 +358,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                             // Recent Screenings
                             RecentScreeningsTable(
+                              screenings: _recentScreenings,
                               onViewAllTap: () {
                                 _handleNavItemSelect(
                                   'My Screenings',
@@ -302,22 +380,22 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildStatCards(double screenWidth) {
-    const statCards = [
+    final statCards = [
       DashboardStatCard(
         label: 'Total Screenings',
-        value: '24',
+        value: _totalScreenings.toString(),
       ),
       DashboardStatCard(
         label: 'Completed',
-        value: '18',
+        value: _completedScreenings.toString(),
       ),
       DashboardStatCard(
         label: 'In Progress',
-        value: '3',
+        value: _inProgressScreenings.toString(),
       ),
       DashboardStatCard(
         label: 'Average Match Score',
-        value: '78%',
+        value: '${_averageMatchScore.toStringAsFixed(0)}%',
       ),
     ];
 

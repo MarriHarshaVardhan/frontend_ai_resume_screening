@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
@@ -34,8 +33,9 @@ class ResumeService {
 
     request.fields['job_title'] = jobTitle;
 
-    request.fields['required_skills'] =
-        jsonEncode(requiredSkills);
+    request.fields['required_skills'] = jsonEncode(
+      requiredSkills,
+    );
 
     // WEB: file.bytes
     // MOBILE/DESKTOP: file.path
@@ -61,11 +61,9 @@ class ResumeService {
       );
     }
 
-    final streamedResponse =
-        await request.send();
+    final streamedResponse = await request.send();
 
-    final response =
-        await http.Response.fromStream(
+    final response = await http.Response.fromStream(
       streamedResponse,
     );
 
@@ -99,14 +97,13 @@ class ResumeService {
         'Invalid upload response received from server',
       );
     } else {
-      String errorMessage =
-          'Resume upload failed';
+      String errorMessage = 'Resume upload failed';
 
       if (responseData is Map<String, dynamic>) {
         errorMessage =
             responseData['detail'] ??
-                responseData['message'] ??
-                errorMessage;
+            responseData['message'] ??
+            errorMessage;
       }
 
       throw Exception(errorMessage);
@@ -153,8 +150,7 @@ class ResumeService {
     );
 
     if (response is Map<String, dynamic>) {
-      final screeningId =
-          response['screening_id'];
+      final screeningId = response['screening_id'];
 
       if (screeningId == null) {
         throw Exception(
@@ -187,18 +183,15 @@ class ResumeService {
     List<String> requiredSkills,
   ) async {
     // STEP 1: Upload Resume
-    final uploadData =
-        await uploadResume(
+    final uploadData = await uploadResume(
       file,
       jobTitle,
       requiredSkills,
     );
 
-    final resumeId =
-        uploadData['resume_id']!;
+    final resumeId = uploadData['resume_id']!;
 
-    final jobId =
-        uploadData['job_id']!;
+    final jobId = uploadData['job_id']!;
 
     // STEP 2: Extract Resume Text
     await extractText(resumeId);
@@ -207,8 +200,7 @@ class ResumeService {
     await cleanText(resumeId);
 
     // STEP 4: AI Resume Analysis
-    final screeningId =
-        await analyzeResume(
+    final screeningId = await analyzeResume(
       resumeId,
       jobId,
     );

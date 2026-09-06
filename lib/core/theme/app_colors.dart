@@ -5,7 +5,7 @@ class AppColors {
   static const Color primary = Color(0xFF6C5CE7);
   static const Color primaryDark = Color(0xFF5A49E0);
   static const Color primaryLight = Color(0xFF8C7CFF);
-  
+
   // Gradient Colors
   static const List<Color> ctaGradient = [
     Color(0xFF654CE5),
@@ -38,6 +38,32 @@ class AppColors {
   // Status Badge Colors
   static const Color statusCompletedBg = Color(0xFFD1FAE5);
   static const Color statusCompletedText = Color(0xFF059669);
+
   static const Color statusInProgressBg = Color(0xFFFEF3C7);
   static const Color statusInProgressText = Color(0xFFD97706);
+
+  // --------------------------------------------------
+  // Notification Colors
+  // --------------------------------------------------
+
+  // Success Notification
+  static const Color notificationSuccess =
+      Color(0xFF16A34A);
+
+  static const Color notificationSuccessBg =
+      Color(0xFFF0FDF4);
+
+  // Error Notification
+  static const Color notificationError =
+      Color(0xFFDC2626);
+
+  static const Color notificationErrorBg =
+      Color(0xFFFEF2F2);
+
+  // Info Notification
+  static const Color notificationInfo =
+      Color(0xFF2563EB);
+
+  static const Color notificationInfoBg =
+      Color(0xFFEFF6FF);
 }

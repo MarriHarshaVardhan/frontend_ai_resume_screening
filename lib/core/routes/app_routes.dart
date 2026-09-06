@@ -9,6 +9,9 @@ import '../../pages/new_screening_page.dart';
 import '../../pages/screening_result_page.dart';
 import '../../pages/my_screenings_page.dart';
 
+import '../../pages/admin/admin_login_page.dart';
+import '../../pages/admin/admin_registration_page.dart';
+
 class AppRoutes {
   static const String landing = '/';
   static const String login = '/login';
@@ -20,6 +23,9 @@ class AppRoutes {
   static const String newScreening = '/new-screening';
   static const String screeningResult = '/screening-result';
   static const String myScreenings = '/my-screenings';
+
+  static const String adminLogin = '/admin-login';
+  static const String adminRegistration = '/admin-registration';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -33,6 +39,8 @@ class AppRoutes {
       newScreening: (context) => const NewScreeningPage(),
       screeningResult: (context) => const ScreeningResultPage(),
       myScreenings: (context) => const MyScreeningsPage(),
+      adminLogin: (context) => const AdminLoginPage(),
+      adminRegistration: (context) => const AdminRegistrationPage(),
     };
   }
 }
